@@ -3,11 +3,16 @@
   "mcpServers": {
     "ds-release": {
       "type": "stdio",
-      "command": "python3",
-      "args": ["mcp/ds_release_mcp.py"],
+      "command": "cmd",
+      "args": [
+        "/c",
+        "mcp\\launch.cmd"
+      ],
       "env": {
         "BB_WORKSPACE": "dsteamdev",
-        "BB_PIPELINE_REPO": "repo-mirror"
+        "BB_PIPELINE_REPO": "repo-mirror",
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONUTF8": "1"
       }
     }
   }

@@ -35,7 +35,14 @@ Scrivi in chat a Kiro, ad esempio:
 
 ## Requisiti
 
-- Kiro con supporto Powers, `git` e `python3` nel PATH
+- Windows con Kiro (versione con supporto Powers)
+- **Git** e **Python 3** installati. Se non li hai, da PowerShell:
+
+      winget install --id Git.Git -e
+      winget install --id Python.Python.3.12 -e
+
+  poi CHIUDI E RIAPRI Kiro (serve a rileggere il PATH). Verifica con
+  `git --version` e `python --version`.
 - Un account Bitbucket autorizzato sul workspace DS Group e sul Bitbucket
   Server di Enel, con un API token con permessi di lettura/scrittura su
   repository e pipeline (la power guida la configurazione al primo utilizzo)
