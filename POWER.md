@@ -2,7 +2,7 @@
 name: "DS Group - Mirror Repository per progetti Enel"
 description: "Triage delle segnalazioni sulle app mobile realizzate da DS Group per il cliente Enel. Procura in locale una copia del codice di una versione specifica (app, librerie e documentazione assemblati) e la apre in Kiro per analizzare il malfunzionamento."
 author: "DS Group S.p.A."
-version: 1.8.0
+version: 1.8.1
 keywords:
   - "enel"
   - "forcebeat"
@@ -77,10 +77,15 @@ Il flusso e' descritto nella skill `copia-codice`:
 - **Git** e **Python 3** installati sul PC. Se mancano, da PowerShell:
   `winget install --id Git.Git -e` e
   `winget install --id Python.Python.3.12 -e`, poi chiudere e riaprire Kiro.
-- Un account Bitbucket autorizzato, con API token personale (permessi di
-  lettura/scrittura su repository e pipeline). Al primo utilizzo la power
-  guida la configurazione: le credenziali restano solo sul PC dell'utente
-  nel file `~/.ds-release.conf`.
+- Un account Bitbucket Cloud con accesso al workspace DS Group
+  (dsteamdev), con API token personale (permessi di lettura/scrittura su
+  repository e pipeline). Al primo utilizzo la power guida la
+  configurazione: le credenziali restano solo sul PC dell'utente nel file
+  `~/.ds-release.conf`.
+- NON serve alcun accesso al Bitbucket di Enel: i repository del cliente
+  vengono letti dalla pipeline su repo-mirror, con un token configurato
+  lato server. Se l'utente chiede se gli servono credenziali Enel, la
+  risposta e' no.
 
 ## Se gli strumenti non sono disponibili
 

@@ -10,10 +10,12 @@ Non serve a preparare rilasci: le copie sono generate e di sola lettura.
 
 ## Ambito e prerequisiti di accesso
 
-**Strumento interno.** Funziona solo per i progetti Enel di DS Group, i cui
-sorgenti risiedono in repository PRIVATI sul Bitbucket Server di Enel e sul
-workspace Bitbucket Cloud di DS Group. Senza credenziali autorizzate su
-entrambi non e' utilizzabile: installarla non da' alcun accesso al codice.
+**Strumento interno.** Funziona solo per i progetti Enel di DS Group.
+La copia del codice viene assemblata da una pipeline che gira sul Bitbucket
+Cloud di DS Group; i repository del cliente sono letti da quella pipeline
+con un token configurato lato server. All'utente serve quindi soltanto
+l'accesso autorizzato al workspace Bitbucket di DS Group: nessuna
+credenziale Enel. Installare la power non da' alcun accesso al codice.
 Per progetti di altri clienti non e' applicabile.
 
 ## Installazione
@@ -43,9 +45,10 @@ Scrivi in chat a Kiro, ad esempio:
 
   poi CHIUDI E RIAPRI Kiro (serve a rileggere il PATH). Verifica con
   `git --version` e `python --version`.
-- Un account Bitbucket autorizzato sul workspace DS Group e sul Bitbucket
-  Server di Enel, con un API token con permessi di lettura/scrittura su
-  repository e pipeline (la power guida la configurazione al primo utilizzo)
+- Un account Bitbucket Cloud con accesso al workspace DS Group, con un API
+  token personale (permessi di lettura/scrittura su repository e pipeline).
+  La power guida la configurazione al primo utilizzo. Non serve alcuna
+  credenziale del Bitbucket di Enel.
 
 Le credenziali restano solo sul PC dell'utente (`~/.ds-release.conf`, permessi 600).
 Questo repository contiene esclusivamente il tooling: nessun codice

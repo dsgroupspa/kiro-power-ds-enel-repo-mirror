@@ -9,11 +9,12 @@ Serve quando arriva una segnalazione di malfunzionamento su un'app in una
 certa versione e occorre guardare il codice esatto di quella versione:
 sorgenti dell'app, librerie usate e documentazione, assemblati insieme.
 
-**Ambito:** solo le app mobile realizzate da DS Group per il cliente Enel,
-i cui sorgenti stanno nei repository privati del Bitbucket Server Enel e nel
-workspace Bitbucket Cloud di DS Group. Serve un accesso autorizzato a
-entrambi. Se l'utente chiede il codice di un progetto di un altro cliente,
-spiega che questo strumento non lo copre.
+**Ambito:** solo le app mobile realizzate da DS Group per il cliente Enel.
+All'utente serve soltanto l'accesso al workspace Bitbucket Cloud di DS Group
+(dsteamdev): i repository di Enel vengono letti dalla pipeline con un token
+configurato lato server, quindi NON chiedere credenziali Enel. Se l'utente
+chiede il codice di un progetto di un altro cliente, spiega che questo
+strumento non lo copre.
 
 **Rispondi SEMPRE in italiano**, anche in questa presentazione iniziale e
 anche se l'utente scrive in inglese: chi usa questo strumento e' personale

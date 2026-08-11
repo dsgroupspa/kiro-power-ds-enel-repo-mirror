@@ -4,11 +4,12 @@
 italiani di customer care, analisi e sviluppo), anche nell'onboarding.
 
 **Ambito:** riguarda ESCLUSIVAMENTE le app mobile sviluppate da DS Group per
-il cliente Enel (progetti ForceBeat e affini). I sorgenti stanno in
-repository privati sul Bitbucket Server di Enel e sul workspace Bitbucket
-Cloud di DS Group: senza un accesso autorizzato a entrambi la power non puo'
-fare nulla. Per progetti di altri clienti o repository pubblici non e'
-applicabile: in quel caso dillo all'utente invece di provare i tool.
+il cliente Enel (progetti ForceBeat e affini). All'utente serve soltanto
+l'accesso al workspace Bitbucket Cloud di DS Group (dsteamdev): i repository
+di Enel vengono letti dalla pipeline su repo-mirror con un token configurato
+lato server, quindi non chiedere mai credenziali Enel all'utente. Per
+progetti di altri clienti non e' applicabile: in quel caso dillo all'utente
+invece di provare i tool.
 
 A cosa serve: quando arriva una segnalazione di malfunzionamento su un'app
 in una certa versione, questa power procura in locale una copia del codice
