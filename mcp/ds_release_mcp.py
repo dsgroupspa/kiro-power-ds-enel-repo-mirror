@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-MCP server "ds-release": pilota le pipeline di release del repo-mirror da Kiro.
+MCP server "ds-release": prepara copie locali del codice di una versione
+specifica di un'app, per fare triage sulle segnalazioni di malfunzionamento.
 
 Tool esposti:
   setup_credentials  configura email + API token personale (salvati in ~/.ds-release.conf)
   whoami             mostra con che utenza si sta lavorando
-  list_apps          elenca le app configurate in apps/*.yaml su repo-mirror
-  start_release      avvia la pipeline release per APP + VERSION
-  release_status     stato/esito della pipeline; se fallita estrae il riepilogo errori
-  clone_mirror       clona in locale la repo mirror di una release completata
+  list_apps          elenca le app disponibili (manifest su repo-mirror)
+  prepare_clone      compone la copia della versione indicata (avvia la pipeline)
+  clone_status       stato della preparazione; se fallisce estrae il riepilogo errori
+  download_clone     scarica la copia in locale e la apre in Kiro per l'analisi
 
 Nessuna dipendenza: solo stdlib (python3 >= 3.8). Trasporto MCP stdio.
 Config opzionale via env: BB_WORKSPACE (default dsteamdev),
@@ -330,7 +331,7 @@ def t_list_apps():
             + "\n".join(sorted(rows))), False
 
 
-def t_start_release(app, version):
+def t_prepare_clone(app, version):
     err = ensure_auth()
     if err:
         return err, True
@@ -358,14 +359,14 @@ def t_start_release(app, version):
                     "e poi chiama setup_credentials con email e nuovo token.")
         return f"Errore avvio pipeline (HTTP {st}): {body[:400]}{hint}", True
     d = json.loads(body)
-    return (f"Pipeline #{d['build_number']} avviata per {app} {version}.\n"
+    return (f"Preparazione avviata per {app} {version} (job #{d['build_number']}).\n"
             f"uuid: {d['uuid']}\n"
             f"URL: https://bitbucket.org/{WORKSPACE}/{PIPE_REPO}/pipelines/results/{d['build_number']}\n"
-            f"Controlla l'esito con release_status (usa l'uuid), anche piu' volte "
-            f"finche' non risulta COMPLETED."), False
+            f"Controlla l'avanzamento con clone_status (usa l'uuid), anche piu' "
+            f"volte finche' non risulta COMPLETED."), False
 
 
-def t_release_status(pipeline, wait_seconds=0):
+def t_clone_status(pipeline, wait_seconds=0):
     err = ensure_auth()
     if err:
         return err, True
@@ -383,12 +384,12 @@ def t_release_status(pipeline, wait_seconds=0):
     build = d.get("build_number")
     url = f"https://bitbucket.org/{WORKSPACE}/{PIPE_REPO}/pipelines/results/{build}"
     if state != "COMPLETED":
-        return (f"Pipeline #{build} ancora in corso ({state}). "
-                f"Richiama release_status tra poco.\n{url}"), False
+        return (f"Preparazione #{build} ancora in corso ({state}). "
+                f"Richiama clone_status tra poco.\n{url}"), False
     result = (d.get("state", {}).get("result") or {}).get("name")
     if result == "SUCCESSFUL":
-        return (f"Pipeline #{build} COMPLETATA CON SUCCESSO.\n{url}\n"
-                f"Puoi clonare la mirror con clone_mirror."), False
+        return (f"Copia pronta (job #{build} completato).\n{url}\n"
+                f"Scaricala in locale con download_clone."), False
     # fallita: estrai il riepilogo errori dal log dello step
     st, body = _http(f"{API}/pipelines/{pipeline}/steps/")
     errors = ""
@@ -401,14 +402,14 @@ def t_release_status(pipeline, wait_seconds=0):
                              if re.search(r"ERRORE|WARNING|RIEPILOGO", l)]
                     errors = "\n".join(lines) if lines else "\n".join(log.splitlines()[-25:])
                 break
-    return (f"Pipeline #{build} FALLITA ({result}).\n{url}\n\n"
+    return (f"Preparazione #{build} FALLITA ({result}).\n{url}\n\n"
             f"=== ERRORI DA SEGNALARE AL TEAM DI SVILUPPO ===\n"
             f"{errors or '(log non recuperabile, vedi URL)'}\n"
             f"===============================================\n"
             f"Mostra questo blocco all'utente cosi' puo' inoltrarlo ai dev."), True
 
 
-def t_clone_mirror(app, version, dest_dir=None, open_ide=True):
+def t_download_clone(app, version, dest_dir=None, open_ide=True):
     err = ensure_auth()
     if err:
         return err, True
@@ -424,7 +425,7 @@ def t_clone_mirror(app, version, dest_dir=None, open_ide=True):
         return f"Clone fallito: {r.stderr.strip()[:400]}", True
     subprocess.run(["git", "-C", dest, "remote", "set-url", "origin",
                     f"https://bitbucket.org/{WORKSPACE}/{slug}.git"], check=False)
-    msg = f"Repo {WORKSPACE}/{slug} ({branch}) clonata in: {dest}\n"
+    msg = f"Copia del codice {app} {version} scaricata in: {dest}\n"
     if open_ide:
         used = _open_in_ide(dest)
         if used:
@@ -495,37 +496,39 @@ TOOLS = [
          inputSchema={"type": "object", "properties": {}},
          fn=lambda a: t_whoami()),
     dict(name="list_apps",
-         description="Elenca le app configurate per la release (manifest apps/*.yaml "
-                     "sul repo-mirror), con repo di destinazione.",
+         description="Elenca le app di cui e' possibile ottenere una copia del "
+                     "codice per analisi, come configurate su repo-mirror.",
          inputSchema={"type": "object", "properties": {}},
          fn=lambda a: t_list_apps()),
-    dict(name="start_release",
-         description="Avvia la pipeline di release per un'app e una versione "
-                     "(es. app=MECE, version=1.15.14-0_IT). Ritorna uuid e URL.",
+    dict(name="prepare_clone",
+         description="Prepara la copia del codice di una versione specifica "
+                     "(es. app=MECE, version=1.15.14-0_IT): assembla app, "
+                     "librerie e documentazione di quella versione. Ritorna "
+                     "uuid e URL per seguirne lo stato.",
          inputSchema={"type": "object", "required": ["app", "version"],
                       "properties": {"app": {"type": "string"},
                                      "version": {"type": "string"}}},
-         fn=lambda a: t_start_release(a["app"], a["version"])),
-    dict(name="release_status",
-         description="Stato/esito di una pipeline (uuid o build number). Con "
-                     "wait_seconds>0 attende fino a quel tempo (max 240s) che si "
-                     "concluda. Se fallita, restituisce il riepilogo errori pronto "
-                     "da inoltrare ai dev.",
+         fn=lambda a: t_prepare_clone(a["app"], a["version"])),
+    dict(name="clone_status",
+         description="Stato della preparazione della copia (uuid o numero). Con "
+                     "wait_seconds>0 attende fino a quel tempo (max 240s). Se "
+                     "fallisce, restituisce il riepilogo dei riferimenti mancanti "
+                     "da inoltrare al team di sviluppo.",
          inputSchema={"type": "object", "required": ["pipeline"],
                       "properties": {"pipeline": {"type": "string"},
                                      "wait_seconds": {"type": "integer"}}},
-         fn=lambda a: t_release_status(a["pipeline"], a.get("wait_seconds", 0))),
-    dict(name="clone_mirror",
-         description="Clona in locale la repo mirror di una release completata "
-                     "(branch release/<version>) e la apre in una NUOVA finestra "
-                     "di Kiro, cioe' una nuova sessione di chat su quel progetto. "
-                     "Usa open_ide=false per clonare soltanto.",
+         fn=lambda a: t_clone_status(a["pipeline"], a.get("wait_seconds", 0))),
+    dict(name="download_clone",
+         description="Scarica in locale la copia del codice preparata e la apre "
+                     "in una NUOVA finestra di Kiro (nuova sessione di chat su "
+                     "quel progetto), pronta per l'analisi. Usa open_ide=false "
+                     "per scaricare soltanto.",
          inputSchema={"type": "object", "required": ["app", "version"],
                       "properties": {"app": {"type": "string"},
                                      "version": {"type": "string"},
                                      "dest_dir": {"type": "string"},
                                      "open_ide": {"type": "boolean"}}},
-         fn=lambda a: t_clone_mirror(a["app"], a["version"], a.get("dest_dir"),
+         fn=lambda a: t_download_clone(a["app"], a["version"], a.get("dest_dir"),
                                      a.get("open_ide", True))),
 ]
 
