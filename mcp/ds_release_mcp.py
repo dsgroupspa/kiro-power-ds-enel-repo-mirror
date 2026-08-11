@@ -135,6 +135,71 @@ def _token():
 
 # --------------------------------------------------------------------- tools
 
+
+def _git_out(args, cwd=None):
+    try:
+        r = subprocess.run(["git"] + args, cwd=cwd, capture_output=True,
+                           text=True, timeout=10)
+        return r.returncode, (r.stdout or "").strip()
+    except Exception:
+        return 1, ""
+
+
+def _power_repos():
+    """Cartelle git candidate: quella della power in uso e i cloni delle power."""
+    cands = []
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cands.append(here)
+    base = os.path.expanduser("~/.kiro/powers/repos")
+    if os.path.isdir(base):
+        for d in os.listdir(base):
+            full = os.path.join(base, d)
+            if os.path.isdir(os.path.join(full, ".git")):
+                cands.append(full)
+    seen, out = set(), []
+    for c in cands:
+        rc, top = _git_out(["rev-parse", "--show-toplevel"], cwd=c)
+        if rc == 0 and top and top not in seen:
+            seen.add(top)
+            out.append(top)
+    return out
+
+
+def ensure_update_identity(verbose=False):
+    """Workaround al bug Kiro #6278: 'Check for updates' esegue un git pull nel
+    clone della power e falisce se in quel repo non e' impostato user.name.
+    Qui l'identita' viene scritta a livello di repo, senza toccare la config
+    globale dell'utente. Best-effort e silenzioso.
+    """
+    fixed, already = [], []
+    for repo in _power_repos():
+        rc, name = _git_out(["config", "--local", "user.name"], cwd=repo)
+        if rc == 0 and name:
+            already.append(repo)
+            continue
+        rc_g, gname = _git_out(["config", "--global", "user.name"])
+        rc_e, gmail = _git_out(["config", "--global", "user.email"])
+        name = gname if rc_g == 0 and gname else "Kiro Power User"
+        mail = gmail if rc_e == 0 and gmail else "kiro-power@localhost"
+        ok1, _ = _git_out(["config", "--local", "user.name", name], cwd=repo)
+        ok2, _ = _git_out(["config", "--local", "user.email", mail], cwd=repo)
+        if ok1 == 0 and ok2 == 0:
+            fixed.append(repo)
+    if verbose:
+        lines = []
+        if fixed:
+            lines.append("Identita' git impostata (ora 'Check for updates' funziona) in:")
+            lines += [f"  - {r}" for r in fixed]
+        if already:
+            lines.append("Gia' a posto:")
+            lines += [f"  - {r}" for r in already]
+        if not lines:
+            lines.append("Nessun clone di power trovato: se la power e' stata "
+                         "installata da cartella locale, l'aggiornamento non usa git.")
+        return "\n".join(lines), False
+    return None
+
+
 def _open_in_ide(path):
     """Apre la cartella in una nuova finestra di Kiro (nuova sessione di chat).
 
@@ -366,6 +431,13 @@ TOOLS = [
                       "properties": {"email": {"type": "string"},
                                      "token": {"type": "string"}}},
          fn=lambda a: t_setup_credentials(a["email"], a["token"])),
+    dict(name="fix_power_updates",
+         description="Applica il workaround al bug di Kiro che impedisce "
+                     "'Check for updates' (git pull senza user.name nel clone "
+                     "della power). Chiamalo se l'utente segnala che gli "
+                     "aggiornamenti della power non funzionano.",
+         inputSchema={"type": "object", "properties": {}},
+         fn=lambda a: ensure_update_identity(verbose=True)),
     dict(name="check_tool_updates",
          description="Verifica se la power ds-release installata e' aggiornata "
                      "rispetto alla versione pubblicata su repo-mirror. Chiamalo "
@@ -425,6 +497,12 @@ def _reply(msg_id, result=None, error=None):
 
 
 def main():
+    # workaround bug Kiro #6278, applicato una volta per avvio: rende possibile
+    # "Check for updates" senza interventi manuali dell'utente.
+    try:
+        ensure_update_identity()
+    except Exception:
+        pass
     for line in sys.stdin:
         line = line.strip()
         if not line:

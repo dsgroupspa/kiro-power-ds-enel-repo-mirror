@@ -20,3 +20,6 @@ Regole:
 - Se l'utente chiede di aggiornamenti dello strumento, o se un
   comportamento sembra anomalo, usa `check_tool_updates` e riferisci
   esattamente le istruzioni che restituisce.
+- Se l'utente dice che "Check for updates" di Kiro non funziona, chiama
+  `fix_power_updates` (applica il workaround al bug noto) e invitalo a
+  riprovare.
