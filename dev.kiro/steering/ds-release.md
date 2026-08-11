@@ -20,6 +20,12 @@ Quando l'utente parla di "segnalazione", "malfunzionamento", "bug",
 "analizzare/verificare il codice di una versione", "scaricare un'app",
 usa i tool del server MCP `ds-mirror-enel` seguendo la skill `copia-codice`.
 
+**Se gli strumenti della power non sono disponibili** (server MCP non
+connesso, nessuno strumento elencato, l'utente dice che "non funziona"):
+non arrenderti e non limitarti a segnalare il problema. Segui la skill
+`prerequisiti`, che verifica Git e Python 3, li installa con il consenso
+dell'utente e spiega il riavvio di Kiro necessario.
+
 Regole:
 
 - L'elenco delle app disponibili si ottiene SOLO con `list_apps`: le

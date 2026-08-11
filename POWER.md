@@ -2,7 +2,7 @@
 name: "DS Group - Mirror Repository per progetti Enel"
 description: "Triage delle segnalazioni sulle app mobile realizzate da DS Group per il cliente Enel. Procura in locale una copia del codice di una versione specifica (app, librerie e documentazione assemblati) e la apre in Kiro per analizzare il malfunzionamento."
 author: "DS Group S.p.A."
-version: 1.7.1
+version: 1.8.0
 keywords:
   - "enel"
   - "forcebeat"
@@ -81,6 +81,21 @@ Il flusso e' descritto nella skill `copia-codice`:
   lettura/scrittura su repository e pipeline). Al primo utilizzo la power
   guida la configurazione: le credenziali restano solo sul PC dell'utente
   nel file `~/.ds-release.conf`.
+
+## Se gli strumenti non sono disponibili
+
+Se in chat non risulta disponibile alcuno strumento di questa power, manca
+un prerequisito sul PC (quasi sempre Python 3, oppure Kiro e' stato aperto
+prima di installarlo). NON limitarti a segnalarlo: segui la skill
+`prerequisiti`, che verifica Git e Python 3 nel terminale, li installa con
+il consenso dell'utente tramite `winget` e spiega il riavvio di Kiro.
+Procedura sintetica:
+
+1. verifica: `git --version`, `python --version`, `py -3 --version`
+2. se manca Python, con il consenso dell'utente:
+   `winget install --id Python.Python.3.12 -e --scope user --accept-package-agreements --accept-source-agreements`
+3. verifica con `py -3 --version`
+4. chiedi all'utente di chiudere e riaprire Kiro, poi riprovare
 
 ## Note
 
