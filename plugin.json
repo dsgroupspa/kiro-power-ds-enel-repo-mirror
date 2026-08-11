@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "kiro-power-ds-enel-repo-mirror",
-  "version": "1.1.2",
-  "description": "Release delle app mobile mirror DS Group: avvia la pipeline Bitbucket, monitora l'esito, clona la repo composta in locale e riporta gli errori al team di sviluppo",
+  "version": "1.2.1",
+  "description": "Release workflow for DS Group mobile mirror apps: triggers the Bitbucket pipeline, tracks it to completion, clones the composed repository locally and reports build errors back to the development team",
   "author": {
     "name": "DS Group",
     "email": "gerardo.paternoster@dsgroup.it"
@@ -14,9 +14,12 @@
     "release",
     "rilascio",
     "mirror",
+    "sincronizza",
     "sync",
     "pipeline",
     "bitbucket",
+    "kiro",
+    "app mobile",
     "mece",
     "medi",
     "megm",
@@ -27,6 +30,6 @@
     "smpr",
     "smtu",
     "mobauth",
-    "forcebeat"
+    "trace"
   ]
 }

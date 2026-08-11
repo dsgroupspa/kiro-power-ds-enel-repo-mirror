@@ -134,6 +134,35 @@ def _token():
 
 
 # --------------------------------------------------------------------- tools
+
+def _open_in_ide(path):
+    """Apre la cartella in una nuova finestra di Kiro (nuova sessione di chat).
+
+    Ritorna il comando usato, oppure None se nessun IDE e' stato trovato.
+    Il processo viene staccato: resta aperto anche quando il server MCP termina.
+    """
+    import shutil
+    for cmd in ("kiro", "code"):
+        exe = shutil.which(cmd)
+        if not exe:
+            continue
+        kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+        if os.name == "nt":
+            # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+            kwargs["creationflags"] = 0x00000008 | 0x00000200
+        else:
+            kwargs["start_new_session"] = True
+        try:
+            if exe.lower().endswith((".cmd", ".bat")):
+                subprocess.Popen(f'"{exe}" -n "{path}"', shell=True, **kwargs)
+            else:
+                subprocess.Popen([exe, "-n", path], **kwargs)
+            return cmd
+        except Exception:
+            continue
+    return None
+
+
 def t_setup_credentials(email, token):
     global _auth
     a = _check(email, token)
@@ -185,8 +214,10 @@ def t_list_apps():
                     + ("" if has_rel else " (senza ref release!)"))
     if not rows:
         return "Nessun manifest trovato in apps/ su repo-mirror.", True
-    return ("App configurate su repo-mirror (usa il nome cosi' com'e' per "
-            "start_release):\n" + "\n".join(sorted(rows))), False
+    return ("App configurate (usa il nome esattamente cosi' com'e' per "
+            "start_release). Questo e' l'unico elenco valido: non aggiungere "
+            "altri nomi. Presentalo all'utente in italiano.\n"
+            + "\n".join(sorted(rows))), False
 
 
 def t_start_release(app, version):
@@ -267,7 +298,7 @@ def t_release_status(pipeline, wait_seconds=0):
             f"Mostra questo blocco all'utente cosi' puo' inoltrarlo ai dev."), True
 
 
-def t_clone_mirror(app, version, dest_dir=None):
+def t_clone_mirror(app, version, dest_dir=None, open_ide=True):
     err = ensure_auth()
     if err:
         return err, True
@@ -283,8 +314,22 @@ def t_clone_mirror(app, version, dest_dir=None):
         return f"Clone fallito: {r.stderr.strip()[:400]}", True
     subprocess.run(["git", "-C", dest, "remote", "set-url", "origin",
                     f"https://bitbucket.org/{WORKSPACE}/{slug}.git"], check=False)
-    return (f"Repo {WORKSPACE}/{slug} ({branch}) clonata in: {dest}\n"
-            f"Aprila nell'IDE (es. eseguendo: kiro \"{dest}\")."), False
+    msg = f"Repo {WORKSPACE}/{slug} ({branch}) clonata in: {dest}\n"
+    if open_ide:
+        used = _open_in_ide(dest)
+        if used:
+            if used == "kiro":
+                msg += ("Ho aperto la cartella in una NUOVA finestra di Kiro: la "
+                        "chat di quella finestra e' gia' posizionata su questo "
+                        "progetto, l'utente puo' continuare da li'.")
+            else:
+                msg += f"Ho aperto la cartella con il comando '{used}'."
+        else:
+            msg += (f"Non ho trovato il comando 'kiro' nel PATH: apri la cartella "
+                    f"manualmente dall'IDE (File > Open Folder) oppure installa il "
+                    f"comando da Kiro (Command Palette > 'Shell Command: Install "
+                    f"kiro command in PATH').")
+    return msg, False
 
 
 def t_check_tool_updates():
@@ -355,12 +400,16 @@ TOOLS = [
          fn=lambda a: t_release_status(a["pipeline"], a.get("wait_seconds", 0))),
     dict(name="clone_mirror",
          description="Clona in locale la repo mirror di una release completata "
-                     "(branch release/<version>) e ritorna il percorso da aprire.",
+                     "(branch release/<version>) e la apre in una NUOVA finestra "
+                     "di Kiro, cioe' una nuova sessione di chat su quel progetto. "
+                     "Usa open_ide=false per clonare soltanto.",
          inputSchema={"type": "object", "required": ["app", "version"],
                       "properties": {"app": {"type": "string"},
                                      "version": {"type": "string"},
-                                     "dest_dir": {"type": "string"}}},
-         fn=lambda a: t_clone_mirror(a["app"], a["version"], a.get("dest_dir"))),
+                                     "dest_dir": {"type": "string"},
+                                     "open_ide": {"type": "boolean"}}},
+         fn=lambda a: t_clone_mirror(a["app"], a["version"], a.get("dest_dir"),
+                                     a.get("open_ide", True))),
 ]
 
 
