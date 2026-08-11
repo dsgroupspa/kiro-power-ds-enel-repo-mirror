@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "ds-release": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["mcp/ds_release_mcp.py"],
+      "env": {
+        "BB_WORKSPACE": "dsteamdev",
+        "BB_PIPELINE_REPO": "repo-mirror"
+      }
+    }
+  }
+}
