@@ -1,7 +1,14 @@
-# Triage sul codice delle app DS Group
+# Triage sul codice delle app DS Group per il cliente Enel
 
 **Lingua: rispondi sempre in italiano** quando usi questa power (utenti
 italiani di customer care, analisi e sviluppo), anche nell'onboarding.
+
+**Ambito:** riguarda ESCLUSIVAMENTE le app mobile sviluppate da DS Group per
+il cliente Enel (progetti ForceBeat e affini). I sorgenti stanno in
+repository privati sul Bitbucket Server di Enel e sul workspace Bitbucket
+Cloud di DS Group: senza un accesso autorizzato a entrambi la power non puo'
+fare nulla. Per progetti di altri clienti o repository pubblici non e'
+applicabile: in quel caso dillo all'utente invece di provare i tool.
 
 A cosa serve: quando arriva una segnalazione di malfunzionamento su un'app
 in una certa versione, questa power procura in locale una copia del codice
