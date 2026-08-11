@@ -1,9 +1,34 @@
 ---
-name: DS Group - Mirror Repository per progetti Enel
-description: Triage delle segnalazioni sulle app mobile realizzate da DS Group per il cliente Enel: procura in locale una copia del codice di una versione specifica (app, librerie e documentazione assemblati) e la apre in Kiro per analizzare il malfunzionamento.
-author: DS Group S.p.A.
-version: 1.7.0
-keywords: [enel, forcebeat, segnalazione, malfunzionamento, bug, anomalia, triage, analisi codice, verifica versione, copia codice, scarica app, versione app, mirror, bitbucket, mece, medi, megm, mere, mesi, meve, smdp, smpr, smtu, mobauth, trace]
+name: "DS Group - Mirror Repository per progetti Enel"
+description: "Triage delle segnalazioni sulle app mobile realizzate da DS Group per il cliente Enel. Procura in locale una copia del codice di una versione specifica (app, librerie e documentazione assemblati) e la apre in Kiro per analizzare il malfunzionamento."
+author: "DS Group S.p.A."
+version: 1.7.1
+keywords:
+  - "enel"
+  - "forcebeat"
+  - "segnalazione"
+  - "malfunzionamento"
+  - "bug"
+  - "anomalia"
+  - "triage"
+  - "analisi codice"
+  - "verifica versione"
+  - "copia codice"
+  - "scarica app"
+  - "versione app"
+  - "mirror"
+  - "bitbucket"
+  - "mece"
+  - "medi"
+  - "megm"
+  - "mere"
+  - "mesi"
+  - "meve"
+  - "smdp"
+  - "smpr"
+  - "smtu"
+  - "mobauth"
+  - "trace"
 ---
 
 # DS Group - Mirror Repository per progetti Enel
@@ -15,8 +40,8 @@ italiano di customer care, analisi e sviluppo.
 
 Quando arriva una segnalazione di malfunzionamento su un'app in una certa
 versione, questa power procura in locale una copia del codice di quella
-esatta versione — sorgenti dell'app, librerie usate e documentazione
-assemblati insieme — e la apre in una nuova finestra di Kiro, pronta per
+esatta versione (sorgenti dell'app, librerie usate e documentazione
+assemblati insieme) e la apre in una nuova finestra di Kiro, pronta per
 l'analisi.
 
 Non serve a preparare rilasci: le copie sono generate e di sola lettura.
@@ -26,7 +51,7 @@ Non serve a preparare rilasci: le copie sono generate e di sola lettura.
 Solo le app mobile realizzate da DS Group per il cliente Enel (progetti
 ForceBeat e affini), i cui sorgenti risiedono in repository privati sul
 Bitbucket Server di Enel e sul workspace Bitbucket Cloud di DS Group.
-Serve un accesso autorizzato a entrambi: installare la power non concede
+Serve un accesso autorizzato a entrambi. Installare la power non concede
 alcun accesso al codice. Per progetti di altri clienti non e' applicabile.
 
 ## Come si usa
@@ -38,11 +63,11 @@ Scrivi in chat, per esempio:
 
 Il flusso e' descritto nella skill `copia-codice`:
 
-1. `list_apps` — elenco delle app configurate (unico elenco valido: non
+1. `list_apps` - elenco delle app configurate (unico elenco valido: non
    dedurre i nomi dalle keywords)
-2. `prepare_clone(app, version)` — prepara la copia della versione indicata
-3. `clone_status(uuid, wait_seconds=240)` — attende l'esito (2-5 minuti)
-4. `download_clone(app, version)` — scarica la copia e la apre in una nuova
+2. `prepare_clone(app, version)` - prepara la copia della versione indicata
+3. `clone_status(uuid, wait_seconds=240)` - attende l'esito (2-5 minuti)
+4. `download_clone(app, version)` - scarica la copia e la apre in una nuova
    finestra di Kiro
 5. se la preparazione fallisce, mostra all'utente il blocco "ERRORI DA
    SEGNALARE AL TEAM DI SVILUPPO" cosi' com'e', senza riprovare da solo
@@ -55,7 +80,7 @@ Il flusso e' descritto nella skill `copia-codice`:
 - Un account Bitbucket autorizzato, con API token personale (permessi di
   lettura/scrittura su repository e pipeline). Al primo utilizzo la power
   guida la configurazione: le credenziali restano solo sul PC dell'utente
-  in `~/.ds-release.conf`.
+  nel file `~/.ds-release.conf`.
 
 ## Note
 
