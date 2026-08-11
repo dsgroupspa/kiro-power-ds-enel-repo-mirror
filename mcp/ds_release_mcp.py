@@ -185,14 +185,46 @@ def ensure_update_identity(verbose=False):
         ok2, _ = _git_out(["config", "--local", "user.email", mail], cwd=repo)
         if ok1 == 0 and ok2 == 0:
             fixed.append(repo)
+    # un clone "sporco" fa credere a Kiro che ci sia sempre un aggiornamento:
+    # rimuovi i file generati da Python e riporta lo stato
+    diag = []
+    for repo in _power_repos():
+        for root, dirs, _ in os.walk(repo):
+            if ".git" in root.split(os.sep):
+                continue
+            for d in list(dirs):
+                if d == "__pycache__":
+                    try:
+                        import shutil as _sh
+                        _sh.rmtree(os.path.join(root, d), ignore_errors=True)
+                        dirs.remove(d)
+                    except Exception:
+                        pass
+        if verbose:
+            _, dirty = _git_out(["status", "--porcelain"], cwd=repo)
+            _, branch = _git_out(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo)
+            _git_out(["fetch", "--quiet", "origin"], cwd=repo)
+            _, counts = _git_out(["rev-list", "--left-right", "--count",
+                                  f"HEAD...origin/{branch or 'main'}"], cwd=repo)
+            diag.append(f"  - {repo}\n      branch: {branch or '?'}, "
+                        f"locale/remoto: {counts or '?'}, "
+                        f"modifiche locali: {'SI' if dirty else 'no'}")
+            if dirty:
+                diag.append("      " + dirty.replace("\n", "\n      "))
     if verbose:
         lines = []
         if fixed:
-            lines.append("Identita' git impostata (ora 'Check for updates' funziona) in:")
+            lines.append("Identita' git impostata in:")
             lines += [f"  - {r}" for r in fixed]
         if already:
-            lines.append("Gia' a posto:")
+            lines.append("Identita' git gia' presente in:")
             lines += [f"  - {r}" for r in already]
+        if diag:
+            lines.append("Stato dei cloni delle power:")
+            lines += diag
+            lines.append("Se 'locale/remoto' e' del tipo '0\t0' la power e' "
+                         "aggiornata: se Kiro propone comunque un update, e' un "
+                         "falso positivo della sua interfaccia.")
         if not lines:
             lines.append("Nessun clone di power trovato: se la power e' stata "
                          "installata da cartella locale, l'aggiornamento non usa git.")
@@ -207,14 +239,21 @@ def _open_in_ide(path):
     Il processo viene staccato: resta aperto anche quando il server MCP termina.
     """
     import shutil
+    # il server MCP e' figlio dell'IDE: queste variabili farebbero dialogare il
+    # CLI con l'istanza sbagliata (o lo farebbero fallire in silenzio)
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith(("VSCODE_", "ELECTRON_", "KIRO_IPC", "CHROME_"))}
+    env.pop("ELECTRON_RUN_AS_NODE", None)
     for cmd in ("kiro", "code"):
         exe = shutil.which(cmd)
         if not exe:
             continue
-        kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+        kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL,
+                  "stdin": subprocess.DEVNULL, "env": env, "cwd": path}
         if os.name == "nt":
-            # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
-            kwargs["creationflags"] = 0x00000008 | 0x00000200
+            # CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW: niente console, ma
+            # NON DETACHED (con .cmd il detach fa fallire l'avvio)
+            kwargs["creationflags"] = 0x00000200 | 0x08000000
         else:
             kwargs["start_new_session"] = True
         try:
@@ -225,6 +264,12 @@ def _open_in_ide(path):
             return cmd
         except Exception:
             continue
+    if os.name == "nt":  # ultima spiaggia: apre almeno Esplora risorse
+        try:
+            subprocess.Popen(f'explorer "{path}"', shell=True, env=env)
+            return "explorer"
+        except Exception:
+            pass
     return None
 
 
