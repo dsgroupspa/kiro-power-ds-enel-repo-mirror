@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "kiro-power-ds-enel-repo-mirror",
-  "version": "1.5.1",
+  "name": "ds-group-mirror-repository-enel",
+  "version": "1.6.0",
   "description": "Triage delle segnalazioni sulle app mobile DS Group per il cliente Enel: procura in locale una copia del codice di una versione specifica (app, librerie e documentazione assemblati dai repository privati Bitbucket di Enel e DS Group) e la apre in Kiro per analizzare il malfunzionamento. Uso interno, richiede accesso autorizzato ai repository. Risponde in italiano.",
   "author": {
     "name": "DS Group S.p.A.",
@@ -37,5 +37,11 @@
     "smtu",
     "mobauth",
     "trace"
-  ]
+  ],
+  "extensions": {
+    "dev.kiro": {
+      "displayName": "DS Group - Mirror Repository per progetti Enel",
+      "title": "DS Group - Mirror Repository per progetti Enel"
+    }
+  }
 }

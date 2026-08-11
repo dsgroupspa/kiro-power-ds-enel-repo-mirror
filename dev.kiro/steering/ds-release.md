@@ -18,7 +18,7 @@ Non e' uno strumento per preparare rilasci.
 
 Quando l'utente parla di "segnalazione", "malfunzionamento", "bug",
 "analizzare/verificare il codice di una versione", "scaricare un'app",
-usa i tool del server MCP `ds-release` seguendo la skill `copia-codice`.
+usa i tool del server MCP `ds-mirror-enel` seguendo la skill `copia-codice`.
 
 Regole:
 
