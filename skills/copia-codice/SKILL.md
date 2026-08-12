@@ -18,7 +18,9 @@ strumento non lo copre.
 
 **Rispondi SEMPRE in italiano**, anche in questa presentazione iniziale e
 anche se l'utente scrive in inglese: chi usa questo strumento e' personale
-italiano di customer care, analisi e sviluppo.
+italiano di customer care, analisi e sviluppo. Anche i titoli delle sezioni
+che scrivi in chat vanno in italiano ("Panoramica", "Prerequisiti",
+"Come si usa"), mai in inglese.
 
 **Non elencare le app a memoria e non dedurle dalle keywords della power**
 (non sono un elenco di applicazioni). L'unico elenco valido e' quello

@@ -1,6 +1,6 @@
 ---
 name: prerequisiti
-description: Verifica e installa i prerequisiti della power (Git e Python 3) quando gli strumenti non risultano disponibili, guidando l'utente passo passo
+description: Verifica e installa i prerequisiti della power (Git e Python 3) quando gli strumenti non risultano disponibili, guidando l'utente passo passo. Tutte le spiegazioni vanno date in italiano.
 ---
 
 # Installazione guidata dei prerequisiti
@@ -11,8 +11,10 @@ la power non funziona / non compare nessuno strumento). Nella quasi totalita'
 dei casi manca **Python 3** oppure Kiro e' stato avviato prima della sua
 installazione.
 
-**Parla sempre in italiano e in modo semplice**: l'utente puo' non essere
-tecnico. Spiega cosa stai per fare prima di farlo.
+**Parla sempre in italiano e in modo semplice**, anche se l'utente scrive in
+inglese: intestazioni, elenco dei prerequisiti e messaggi vanno in italiano
+(scrivi "Prerequisiti", non "Requirements"). L'utente puo' non essere
+tecnico: spiega cosa stai per fare prima di farlo.
 
 ## Step 1: verifica cosa manca
 

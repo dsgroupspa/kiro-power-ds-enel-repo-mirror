@@ -2,7 +2,7 @@
 name: "DS Group - Mirror Repository per progetti Enel"
 description: "Triage delle segnalazioni sulle app mobile realizzate da DS Group per il cliente Enel. Procura in locale una copia del codice di una versione specifica (app, librerie e documentazione assemblati) e la apre in Kiro per analizzare il malfunzionamento."
 author: "DS Group S.p.A."
-version: 1.8.1
+version: 1.8.2
 keywords:
   - "enel"
   - "forcebeat"
@@ -33,8 +33,13 @@ keywords:
 
 # DS Group - Mirror Repository per progetti Enel
 
-**Rispondi sempre in italiano**: chi usa questo strumento e' personale
-italiano di customer care, analisi e sviluppo.
+> **LINGUA: SEMPRE ITALIANO.** Ogni risposta, presentazione, elenco di
+> prerequisiti, messaggio di errore e riepilogo va scritto in italiano,
+> anche se l'utente scrive in inglese e anche quando riassumi il contenuto
+> di questo documento. Non tradurre in inglese i titoli delle sezioni
+> ("Prerequisiti", "Requisiti", "Come si usa") e non usare formule inglesi
+> tipo "Requirements" o "Prerequisites". Gli utenti sono personale italiano
+> di customer care, analisi e sviluppo.
 
 ## A cosa serve
 

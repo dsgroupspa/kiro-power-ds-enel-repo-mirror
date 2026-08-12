@@ -1,7 +1,9 @@
 # Triage sul codice delle app DS Group per il cliente Enel
 
 **Lingua: rispondi sempre in italiano** quando usi questa power (utenti
-italiani di customer care, analisi e sviluppo), anche nell'onboarding.
+italiani di customer care, analisi e sviluppo), anche nell'onboarding, negli
+elenchi di prerequisiti e nei titoli delle sezioni: scrivi "Prerequisiti" e
+"Panoramica", non "Requirements" o "Overview".
 
 **Ambito:** riguarda ESCLUSIVAMENTE le app mobile sviluppate da DS Group per
 il cliente Enel (progetti ForceBeat e affini). All'utente serve soltanto
