@@ -10,6 +10,8 @@ Tool esposti:
   prepare_clone      compone la copia della versione indicata (avvia la pipeline)
   clone_status       stato della preparazione; se fallisce estrae il riepilogo errori
   download_clone     scarica la copia in locale e la apre in Kiro per l'analisi
+  check_tool_updates confronta la versione installata con quella pubblicata
+  fix_power_updates  workaround al bug di Kiro su "Check for updates"
 
 Nessuna dipendenza: solo stdlib (python3 >= 3.8). Trasporto MCP stdio.
 Config opzionale via env: BB_WORKSPACE (default dsteamdev),
@@ -326,7 +328,7 @@ def t_list_apps():
     if not rows:
         return "Nessun manifest trovato in apps/ su repo-mirror.", True
     return ("App configurate (usa il nome esattamente cosi' com'e' per "
-            "start_release). Questo e' l'unico elenco valido: non aggiungere "
+            "prepare_clone). Questo e' l'unico elenco valido: non aggiungere "
             "altri nomi. Presentalo all'utente in italiano.\n"
             + "\n".join(sorted(rows))), False
 
@@ -463,7 +465,8 @@ def t_check_tool_updates():
     if local == remote:
         return f"Sei aggiornato: versione {local}.", False
     return (f"AGGIORNAMENTO DISPONIBILE: hai la {local}, l'ultima e' la {remote}.\n"
-            f"Per aggiornare: pannello Powers > la power ds-release > "
+            f"Per aggiornare: pannello Powers > la power "
+            f"'DS Group - Mirror Repository per progetti Enel' > "
             f"'Check for updates' > 'Install updates'.\n"
             f"Riferisci questo messaggio all'utente."), False
 
@@ -485,8 +488,8 @@ TOOLS = [
          inputSchema={"type": "object", "properties": {}},
          fn=lambda a: ensure_update_identity(verbose=True)),
     dict(name="check_tool_updates",
-         description="Verifica se la power ds-release installata e' aggiornata "
-                     "rispetto alla versione pubblicata su repo-mirror. Chiamalo "
+         description="Verifica se la power installata e' aggiornata rispetto "
+                     "alla versione pubblicata sul repo GitHub. Chiamalo "
                      "quando l'utente chiede se ci sono aggiornamenti o quando un "
                      "comportamento anomalo puo' dipendere da una versione vecchia.",
          inputSchema={"type": "object", "properties": {}},
