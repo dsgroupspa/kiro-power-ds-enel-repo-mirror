@@ -2,7 +2,7 @@
 name: "DS Group - Mirror Repository per progetti Enel"
 description: "Triage delle segnalazioni sulle app mobile realizzate da DS Group per il cliente Enel. Procura in locale una copia del codice di una versione specifica (app, librerie e documentazione assemblati) e la apre in Kiro per analizzare il malfunzionamento."
 author: "DS Group S.p.A."
-version: 1.9.0
+version: 1.10.0
 keywords:
   - "enel"
   - "forcebeat"
@@ -18,16 +18,24 @@ keywords:
   - "versione app"
   - "mirror"
   - "bitbucket"
+  - "prerequisiti"
+  - "python"
+  - "installazione"
+  - "non funziona"
+  - "meca"
+  - "mecc"
   - "mece"
   - "medi"
+  - "mefa"
   - "megm"
+  - "meqq"
   - "mere"
   - "mesi"
   - "meve"
+  - "mobauth"
   - "smdp"
   - "smpr"
   - "smtu"
-  - "mobauth"
   - "trace"
 ---
 
