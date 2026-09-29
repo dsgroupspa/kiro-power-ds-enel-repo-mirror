@@ -160,10 +160,18 @@ def _git_out(args, cwd=None):
         return 1, ""
 
 
+def _plugin_root():
+    """Cartella della power/plugin installato. launch.cmd avvia una COPIA dello
+    script fuori da AppData (virtualizzazione MSIX di Claude Desktop) e passa la
+    cartella originale in DS_PLUGIN_ROOT: __file__ punterebbe alla copia."""
+    root = os.environ.get("DS_PLUGIN_ROOT", "").strip()
+    return root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 def _power_repos():
     """Cartelle git candidate: quella della power in uso e i cloni delle power."""
     cands = []
-    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    here = _plugin_root()
     cands.append(here)
     base = os.path.expanduser("~/.kiro/powers/repos")
     if os.path.isdir(base):
@@ -482,9 +490,12 @@ def t_check_tool_updates():
     """Confronta la versione installata con quella pubblicata sul repo della power."""
     local = "?"
     try:
-        pj = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                          "plugin.json")
-        local = json.load(open(pj)).get("version", "?")
+        # Kiro: plugin.json in root; plugin Claude: in .claude-plugin/
+        for pj in (os.path.join(_plugin_root(), "plugin.json"),
+                   os.path.join(_plugin_root(), ".claude-plugin", "plugin.json")):
+            if os.path.isfile(pj):
+                local = json.load(open(pj)).get("version", "?")
+                break
     except Exception:
         pass
     st, body = _http(POWER_MANIFEST_URL, auth=("none",))
