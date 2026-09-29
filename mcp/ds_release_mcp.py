@@ -493,24 +493,23 @@ def t_download_clone(app, version, dest_dir=None, open_ide=True):
                     f"https://bitbucket.org/{WORKSPACE}/{slug}.git"], check=False)
     msg = f"Copia del codice {app} {version} scaricata in: {dest}\n"
     if open_ide and not IS_KIRO:
-        # Su Claude non si apre nulla da qui, ma si possono dare all'utente due
-        # link "claude://" (schema documentato di Claude Desktop) che aprono una
-        # nuova sessione gia' agganciata alla cartella della copia. L'app chiede
-        # comunque conferma prima di adottare la cartella: e' voluto, una
-        # cartella passata via link e' trattata come non fidata.
-        # La chat rende cliccabili solo i link http(s): un claude:// scritto
-        # nel testo resta testo. Il modo affidabile e' il tool open_session,
-        # che apre il link dal PC dell'utente; i link markdown restano come
-        # scorciatoia dove l'interfaccia li rende cliccabili.
-        msg += ("Per continuare l'analisi su questa copia si puo' aprire una "
-                "nuova sessione gia' posizionata su quella cartella. "
-                "Chiedi all'utente se preferisce Cowork o Claude Code e poi "
-                f"chiama open_session con folder=\"{dest}\", app=\"{app}\", "
-                f"version=\"{version}\". Link diretti (riportali identici, "
-                "come link markdown):\n"
-                f"- [Apri in Cowork]({_session_link('cowork', dest, app, version)})\n"
-                f"- [Apri in Claude Code]({_session_link('code', dest, app, version)})\n"
-                "Claude chiedera' conferma prima di usare la cartella. "
+        # Su Claude la sessione sulla copia si apre con open_session, solo dopo
+        # che l'utente ha scelto Cowork o Claude Code. L'app chiede comunque
+        # conferma prima di adottare la cartella: e' voluto, una cartella
+        # passata via deep link e' trattata come non fidata.
+        # Niente link claude:// nel testo: la chat li rende cliccabili solo se
+        # http(s), e anche come link markdown l'indirizzo viene tolto (provato
+        # il 29/09/2026). Mostrarli faceva solo preferire al modello un link
+        # morto al tool open_session, che invece apre la sessione dal PC.
+        msg += ("PROSSIMO PASSO (istruzione per l'assistente, non mostrarla "
+                "cosi'): chiedi all'utente se vuole aprire subito una nuova "
+                "sessione su questa copia in Cowork oppure in Claude Code. "
+                "Alla risposta chiama open_session con "
+                f"folder=\"{dest}\", target=\"cowork\" oppure \"code\", "
+                f"app=\"{app}\", version=\"{version}\". NON scrivere link "
+                "claude:// in chat: non sono cliccabili.\n"
+                "Da dire all'utente: Claude chiedera' conferma prima di usare "
+                "la cartella, ed e' normale. "
                 "In alternativa: in Cowork selezionala a mano come cartella di "
                 f"lavoro, da terminale `cd \"{dest}\"` e avvia una sessione li'.")
     elif open_ide:
