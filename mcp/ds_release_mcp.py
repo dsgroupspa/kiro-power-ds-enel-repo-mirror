@@ -34,6 +34,18 @@ PIPE_BRANCH = os.environ.get("BB_PIPELINE_BRANCH", "master")
 POWER_MANIFEST_URL = os.environ.get(
     "DS_POWER_MANIFEST_URL",
     "https://raw.githubusercontent.com/dsgroupspa/kiro-power-ds-enel-repo-mirror/main/plugin.json")
+
+# Host in cui gira il server: "kiro" (Kiro Power) oppure "claude" (plugin per
+# Claude Code / Cowork). E' lo STESSO file in entrambi i pacchetti: unica fonte
+# di verita', comportamento diverso dove l'host lo impone.
+#   - il workaround al bug #6278 e il tool fix_power_updates riguardano solo Kiro
+#   - l'apertura automatica della cartella ha senso solo in Kiro: su Claude
+#     l'utente e' gia' in una sessione (Cowork) o in un terminale (Claude Code),
+#     e aprirgli una finestra a sorpresa e' peggio che dargli il percorso
+HOST = os.environ.get("DS_HOST", "kiro").strip().lower()
+IS_KIRO = HOST == "kiro"
+# tool che hanno senso solo in Kiro: nascosti e non invocabili altrove
+SOLO_KIRO = ("fix_power_updates", "check_tool_updates")
 API = f"https://api.bitbucket.org/2.0/repositories/{WORKSPACE}/{PIPE_REPO}"
 
 _auth = None  # ("basic", email, token) | ("bearer", token)
@@ -417,7 +429,11 @@ def t_download_clone(app, version, dest_dir=None, open_ide=True):
         return err, True
     slug = f"{app.lower()}_mirror"
     branch = f"release/{version}"
-    dest = os.path.expanduser(dest_dir or f"~/mirrors/{app.lower()}_{version}")
+    # normpath: su Windows expanduser("~/mirrors/...") produce separatori misti
+    # ("C:\\Users\\gerardop/mirrors/..."), che funzionano ma sono illeggibili
+    # per l'utente che deve incollare il percorso
+    dest = os.path.normpath(
+        os.path.expanduser(dest_dir or f"~/mirrors/{app.lower()}_{version}"))
     if os.path.exists(dest):
         return f"La cartella {dest} esiste gia': scegline un'altra o rimuovila.", True
     url = f"https://{_git_user()}:{_token()}@bitbucket.org/{WORKSPACE}/{slug}.git"
@@ -428,7 +444,24 @@ def t_download_clone(app, version, dest_dir=None, open_ide=True):
     subprocess.run(["git", "-C", dest, "remote", "set-url", "origin",
                     f"https://bitbucket.org/{WORKSPACE}/{slug}.git"], check=False)
     msg = f"Copia del codice {app} {version} scaricata in: {dest}\n"
-    if open_ide:
+    if open_ide and not IS_KIRO:
+        # Su Claude non si apre nulla da qui, ma si possono dare all'utente due
+        # link "claude://" (schema documentato di Claude Desktop) che aprono una
+        # nuova sessione gia' agganciata alla cartella della copia. L'app chiede
+        # comunque conferma prima di adottare la cartella: e' voluto, una
+        # cartella passata via link e' trattata come non fidata.
+        from urllib.parse import quote
+        prompt = (f"Analizziamo il codice di {app} {version}: ho una "
+                  f"segnalazione di malfunzionamento su questa versione.")
+        qs = f"folder={quote(dest, safe='')}&q={quote(prompt, safe='')}"
+        msg += ("Per continuare l'analisi su questa copia, apri una nuova "
+                "sessione gia' posizionata su quella cartella:\n"
+                f"- Cowork:      claude://cowork/new?{qs}\n"
+                f"- Claude Code: claude://code/new?{qs}\n"
+                "Claude chiedera' conferma prima di usare la cartella. "
+                "In alternativa: in Cowork selezionala a mano come cartella di "
+                f"lavoro, da terminale `cd \"{dest}\"` e avvia una sessione li'.")
+    elif open_ide:
         used = _open_in_ide(dest)
         if used:
             if used == "kiro":
@@ -522,10 +555,18 @@ TOOLS = [
                                      "wait_seconds": {"type": "integer"}}},
          fn=lambda a: t_clone_status(a["pipeline"], a.get("wait_seconds", 0))),
     dict(name="download_clone",
-         description="Scarica in locale la copia del codice preparata e la apre "
-                     "in una NUOVA finestra di Kiro (nuova sessione di chat su "
-                     "quel progetto), pronta per l'analisi. Usa open_ide=false "
-                     "per scaricare soltanto.",
+         # la descrizione segue l'host: su Claude il tool NON apre nulla, e
+         # prometterlo qui farebbe annunciare all'assistente una cosa che non
+         # accade (segnalato nel test del 25/09/2026)
+         description=("Scarica in locale la copia del codice preparata e la apre "
+                      "in una NUOVA finestra di Kiro (nuova sessione di chat su "
+                      "quel progetto), pronta per l'analisi. Usa open_ide=false "
+                      "per scaricare soltanto."
+                      if IS_KIRO else
+                      "Scarica in locale la copia del codice preparata e "
+                      "restituisce il percorso della cartella, pronta per "
+                      "l'analisi. Non apre finestre: comunica il percorso "
+                      "all'utente e spiega come continuare l'analisi da li'."),
          inputSchema={"type": "object", "required": ["app", "version"],
                       "properties": {"app": {"type": "string"},
                                      "version": {"type": "string"},
@@ -549,11 +590,13 @@ def _reply(msg_id, result=None, error=None):
 
 def main():
     # workaround bug Kiro #6278, applicato una volta per avvio: rende possibile
-    # "Check for updates" senza interventi manuali dell'utente.
-    try:
-        ensure_update_identity()
-    except Exception:
-        pass
+    # "Check for updates" senza interventi manuali dell'utente. Su Claude gli
+    # aggiornamenti passano dal marketplace: non c'e' nessun clone da sistemare.
+    if IS_KIRO:
+        try:
+            ensure_update_identity()
+        except Exception:
+            pass
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -571,14 +614,21 @@ def main():
                 "serverInfo": {"name": "ds-release", "version": "1.0.0"},
             })
         elif method == "tools/list":
+            # Due tool riguardano solo Kiro: fix_power_updates (workaround al bug
+            # #6278) e check_tool_updates (confronto di versione con il repo
+            # della power). Su Claude gli aggiornamenti li gestisce il
+            # marketplace, e il plugin non dichiara un campo "version": esporli
+            # li' significherebbe offrire un rimedio a un problema inesistente e
+            # una verifica che risponderebbe "?".
             _reply(mid, {"tools": [
                 {k: t[k] for k in ("name", "description", "inputSchema")}
-                for t in TOOLS]})
+                for t in TOOLS
+                if IS_KIRO or t["name"] not in SOLO_KIRO]})
         elif method == "tools/call":
             name = params.get("name")
             args = params.get("arguments") or {}
             tool = next((t for t in TOOLS if t["name"] == name), None)
-            if not tool:
+            if not tool or (not IS_KIRO and name in SOLO_KIRO):
                 _reply(mid, error={"code": -32602, "message": f"tool sconosciuto: {name}"})
                 continue
             try:

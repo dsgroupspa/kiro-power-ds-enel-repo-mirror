@@ -45,7 +45,11 @@ rem nessun interprete utilizzabile: messaggio leggibile nel pannello MCP Servers
 echo [ds-release] ERRORE: Python 3 non trovato su questo PC. 1>&2
 echo [ds-release] Installalo da PowerShell:  winget install --id Python.Python.3.12 -e 1>&2
 echo [ds-release] Durante l'installazione spunta "Add python.exe to PATH". 1>&2
-echo [ds-release] Poi CHIUDI E RIAPRI Kiro. 1>&2
+if /i "%DS_HOST%"=="claude" (
+  echo [ds-release] Poi CHIUDI E RIAPRI Claude. 1>&2
+) else (
+  echo [ds-release] Poi CHIUDI E RIAPRI Kiro. 1>&2
+)
 exit /b 1
 
 :try
