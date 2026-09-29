@@ -46,6 +46,8 @@ HOST = os.environ.get("DS_HOST", "kiro").strip().lower()
 IS_KIRO = HOST == "kiro"
 # tool che hanno senso solo in Kiro: nascosti e non invocabili altrove
 SOLO_KIRO = ("fix_power_updates", "check_tool_updates")
+# e viceversa: open_session apre una sessione di Claude Desktop
+SOLO_CLAUDE = ("open_session",)
 API = f"https://api.bitbucket.org/2.0/repositories/{WORKSPACE}/{PIPE_REPO}"
 
 _auth = None  # ("basic", email, token) | ("bearer", token)
@@ -431,6 +433,44 @@ def t_clone_status(pipeline, wait_seconds=0):
             f"Mostra questo blocco all'utente cosi' puo' inoltrarlo ai dev."), True
 
 
+def _session_link(target, folder, app, version):
+    """Deep link di Claude Desktop (schema documentato) che apre una nuova
+    sessione Cowork o Claude Code gia' agganciata alla cartella, con il prompt
+    precompilato. I valori vanno URL-encoded."""
+    from urllib.parse import quote
+    prompt = (f"Analizziamo il codice di {app} {version}: ho una "
+              f"segnalazione di malfunzionamento su questa versione.")
+    return (f"claude://{target}/new?folder={quote(folder, safe='')}"
+            f"&q={quote(prompt, safe='')}")
+
+
+def t_open_session(folder, target="cowork", app="", version=""):
+    """Apre dal PC dell'utente il deep link claude:// per la cartella indicata.
+    Solo su Claude: e' l'equivalente dell'apertura della finestra di Kiro, ma
+    parte solo su richiesta esplicita (l'app chiede comunque conferma)."""
+    target = (target or "cowork").strip().lower()
+    if target not in ("cowork", "code"):
+        return "target deve essere 'cowork' oppure 'code'.", True
+    folder = os.path.normpath(os.path.expanduser(folder or ""))
+    if not os.path.isdir(folder):
+        return f"La cartella {folder} non esiste: scarica prima la copia.", True
+    link = _session_link(target, folder, app or "l'app", version or "")
+    nome = "Cowork" if target == "cowork" else "Claude Code"
+    try:
+        if os.name == "nt":
+            os.startfile(link)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", link])
+        else:
+            subprocess.Popen(["xdg-open", link])
+    except Exception as e:
+        return (f"Non riesco ad aprire la sessione ({e}). Apri a mano {nome} "
+                f"e seleziona la cartella {folder}."), True
+    return (f"Ho chiesto a Claude di aprire una nuova sessione {nome} sulla "
+            f"cartella {folder}. Conferma nella finestra di Claude l'uso della "
+            "cartella: la richiesta e' normale."), False
+
+
 def t_download_clone(app, version, dest_dir=None, open_ide=True):
     err = ensure_auth()
     if err:
@@ -458,14 +498,18 @@ def t_download_clone(app, version, dest_dir=None, open_ide=True):
         # nuova sessione gia' agganciata alla cartella della copia. L'app chiede
         # comunque conferma prima di adottare la cartella: e' voluto, una
         # cartella passata via link e' trattata come non fidata.
-        from urllib.parse import quote
-        prompt = (f"Analizziamo il codice di {app} {version}: ho una "
-                  f"segnalazione di malfunzionamento su questa versione.")
-        qs = f"folder={quote(dest, safe='')}&q={quote(prompt, safe='')}"
-        msg += ("Per continuare l'analisi su questa copia, apri una nuova "
-                "sessione gia' posizionata su quella cartella:\n"
-                f"- Cowork:      claude://cowork/new?{qs}\n"
-                f"- Claude Code: claude://code/new?{qs}\n"
+        # La chat rende cliccabili solo i link http(s): un claude:// scritto
+        # nel testo resta testo. Il modo affidabile e' il tool open_session,
+        # che apre il link dal PC dell'utente; i link markdown restano come
+        # scorciatoia dove l'interfaccia li rende cliccabili.
+        msg += ("Per continuare l'analisi su questa copia si puo' aprire una "
+                "nuova sessione gia' posizionata su quella cartella. "
+                "Chiedi all'utente se preferisce Cowork o Claude Code e poi "
+                f"chiama open_session con folder=\"{dest}\", app=\"{app}\", "
+                f"version=\"{version}\". Link diretti (riportali identici, "
+                "come link markdown):\n"
+                f"- [Apri in Cowork]({_session_link('cowork', dest, app, version)})\n"
+                f"- [Apri in Claude Code]({_session_link('code', dest, app, version)})\n"
                 "Claude chiedera' conferma prima di usare la cartella. "
                 "In alternativa: in Cowork selezionala a mano come cartella di "
                 f"lavoro, da terminale `cd \"{dest}\"` e avvia una sessione li'.")
@@ -585,6 +629,20 @@ TOOLS = [
                                      "open_ide": {"type": "boolean"}}},
          fn=lambda a: t_download_clone(a["app"], a["version"], a.get("dest_dir"),
                                      a.get("open_ide", True))),
+    dict(name="open_session",
+         description="Apre in Claude Desktop una NUOVA sessione (Cowork o "
+                     "Claude Code) gia' posizionata sulla cartella di una copia "
+                     "scaricata, con il prompt di analisi precompilato. Usalo "
+                     "dopo download_clone quando l'utente vuole iniziare "
+                     "l'analisi: target='cowork' oppure 'code'.",
+         inputSchema={"type": "object", "required": ["folder"],
+                      "properties": {"folder": {"type": "string"},
+                                     "target": {"type": "string",
+                                                "enum": ["cowork", "code"]},
+                                     "app": {"type": "string"},
+                                     "version": {"type": "string"}}},
+         fn=lambda a: t_open_session(a["folder"], a.get("target", "cowork"),
+                                     a.get("app", ""), a.get("version", ""))),
 ]
 
 
@@ -634,12 +692,12 @@ def main():
             _reply(mid, {"tools": [
                 {k: t[k] for k in ("name", "description", "inputSchema")}
                 for t in TOOLS
-                if IS_KIRO or t["name"] not in SOLO_KIRO]})
+                if t["name"] not in (SOLO_CLAUDE if IS_KIRO else SOLO_KIRO)]})
         elif method == "tools/call":
             name = params.get("name")
             args = params.get("arguments") or {}
             tool = next((t for t in TOOLS if t["name"] == name), None)
-            if not tool or (not IS_KIRO and name in SOLO_KIRO):
+            if not tool or name in (SOLO_CLAUDE if IS_KIRO else SOLO_KIRO):
                 _reply(mid, error={"code": -32602, "message": f"tool sconosciuto: {name}"})
                 continue
             try:
